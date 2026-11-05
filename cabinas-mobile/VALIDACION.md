@@ -1,5 +1,9 @@
 # Validación Android
 
+## Versión 0.2.3
+
+En un emulador Android 15, la APK reutilizó una sesión UJI real al pulsar «Buscar cabinas». La pantalla de cabinas mostró el progreso y terminó con 39 calendarios verificados y 34 cabinas libres para el 6 de noviembre de 08:00 a 10:00. Las 34 comprobaciones del paquete aislado, con el mismo código y recursos, cubrieron la vuelta automática a la app, la consulta repetida sin duplicar una búsqueda en curso, el refresco por caducidad, el orden de resultados y la eliminación de la preferencia al cerrar sesión. La validación de esta versión se hizo en el emulador.
+
 ## Versión 0.2.2
 
 En el emulador Android 15 se instaló la APK sobre la 0.2.1 con el mismo certificado de firma. Se cortó la red al abrir «Cuenta UJI», se comprobó que la aplicación mostraba «Reintentar» y, tras restaurar la conexión, el botón volvió a cargar el catálogo oficial. La prueba cubre la recuperación ante un corte de conexión en el emulador. La conexión 4G de un móvil físico queda fuera de esta prueba.

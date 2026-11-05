@@ -20,3 +20,38 @@ dialog{border:1px solid #dce4d3;border-radius:22px;color:var(--ink);background:w
 .availability-stat.unverified{background:#eef0ea;border-color:#dfe3d8}.availability-stat.unverified .stat-symbol{background:#e4e8de;border-color:#d8dece;color:#7c8970}.session-label{font-size:10px;color:#829174;letter-spacing:.2px}
 
 .connector-panel{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:22px 26px;margin:0 0 24px;background:#edf1e8;border:1px solid #d4dfcf;border-radius:18px}.connector-panel h2{font-size:21px;letter-spacing:-.5px;margin:5px 0 7px}.connector-panel p{max-width:680px;margin:0;color:#55665a;font-size:13px;line-height:1.6}.connector-actions{min-width:190px;max-width:300px}.connector-actions button{background:#214f40;color:white;font:inherit;font-weight:650;padding:11px 17px;border:0;border-radius:10px;cursor:pointer}.connector-actions button:disabled{opacity:.6;cursor:wait}.connector-actions button+button{background:transparent;color:#214f40}.connector-actions summary{margin-top:10px;cursor:pointer;font-size:12px;color:#4d6656}.connector-actions details p{font-size:12px;margin-top:10px}@media(max-width:760px){.connector-panel{display:block;padding:20px}.connector-actions{margin-top:16px;max-width:none}}
+
+.connector-actions details button{margin-top:10px;background:transparent;color:var(--ink);padding:9px 0}
+.connector-panel.session-connected{padding:12px 16px;gap:10px;margin:12px 0;background:#f6f8f3;border-radius:12px}
+.session-connected .eyebrow,.session-connected h2{display:none}
+.session-connected .connector-actions{min-width:0}
+.session-connected .connector-actions summary{margin-top:0;min-height:34px;align-content:center}
+.session-connected .connector-actions details p{max-width:240px}
+.sort-hint{display:inline-block;margin-inline-start:8px;color:#506c4a;font-size:.9em;font-weight:650}
+@media(max-width:760px){
+  .topbar-inner{height:60px;padding-inline:14px;gap:8px}
+  .wordmark{font-size:21px;gap:7px}
+  .brand-icon{width:33px;height:33px}
+  .topbar .main-nav{display:block;margin-inline-start:auto}
+  .topbar .main-nav>:not([href="#map-panel"]){display:none}
+  .topbar .main-nav>a{display:block;padding:13px 4px;font-size:11px}
+  .account-button{padding-inline:8px;min-height:40px}
+  .main{padding:14px 12px 19px}
+  .hero,.summary>.stat:not(.availability-stat){display:none}
+  .filters{padding:13px;gap:10px 0}
+  .datefield{padding-bottom:9px}
+  .field.durationfield{padding-left:13px}
+  .connector-panel{margin:12px 0;padding:13px;border-radius:13px}
+  .connector-panel h2{font-size:17px;margin:3px 0}
+  .connector-panel p{font-size:12px}
+  .connector-actions{margin-top:9px}
+  .connector-panel.session-connected{display:flex;align-items:center;flex-wrap:wrap;padding:9px 12px}
+  .session-connected .connector-actions{display:flex;align-items:center;flex-wrap:wrap;gap:4px 9px;margin:0}
+  .session-connected .connector-actions>button{padding:7px 0}
+  .summary{margin:10px 0 13px}
+  .availability-panel{scroll-margin-top:4px}
+  #cards-view{max-height:none;overflow:visible}
+  .room-card{padding:12px}
+  .room-card .timeline{margin-top:12px;height:20px}
+  .card-footer{margin-top:9px;padding-top:9px}
+}

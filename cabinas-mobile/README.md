@@ -4,13 +4,13 @@ Aplicación independiente: cada persona se identifica en las páginas oficiales 
 
 ## Instalación
 
-Descarga la APK de la sección Releases del proyecto e instálala con el instalador de Android. Requiere Android 8 o posterior y Android System WebView actualizado. Abre **Cabinas UJI**, pulsa **Conectar con UJI** y completa personalmente la identificación oficial. Elige fecha, hora y cabina. Para reservar, continúa al formulario UJI y confirma allí; la aplicación no envía reservas automáticamente.
+Descarga la APK de la sección Releases del proyecto e instálala con el instalador de Android. Requiere Android 8 o posterior y Android System WebView actualizado. Abre **Cabinas UJI**, elige la franja y pulsa **Buscar cabinas**. Completa personalmente la identificación si UJI la solicita. La aplicación vuelve a la lista mientras carga los horarios. Para reservar, continúa al formulario oficial y confirma allí.
 
 Si Android rechaza la instalación, conserva el aviso y su motivo para poder revisarlo. No se deben desactivar las protecciones del dispositivo. Esta distribución inicial se firma con una clave propia del proyecto, sin publicación en Google Play.
 
 ## Validación
 
-La 0.2.2 permite reintentar el acceso a Cuenta UJI tras un corte de conexión. La 0.2.1 se probó con una sesión UJI en un emulador Android 15 para consultar horarios y abrir el formulario oficial de reserva. Consulta `VALIDACION.md` para el alcance de cada versión.
+La 0.2.3 reutiliza la sesión al buscar, ordena primero las cabinas libres confirmadas y hace más compacta la interfaz móvil. Se probó con una sesión real en un emulador Android 15. Consulta `VALIDACION.md` para el alcance de cada versión.
 
 ## Sesión y datos
 
@@ -36,7 +36,7 @@ El primer comando prepara los recursos, compila Java y DEX, empaqueta, alinea, f
 Con Android SDK Platform Tools y un emulador API 35 disponibles:
 
 ```text
-adb install -r release/Cabinas-UJI-0.2.2-android.apk
+adb install -r release/Cabinas-UJI-0.2.3-android.apk
 adb install -r -t release/Cabinas-UJI-android-smoke-tests.apk
 adb shell am instrument -w es.cabinasuji.independiente.smoke/.SmokeRunner
 ```
@@ -46,7 +46,7 @@ La instrumentación borra la sesión de la instalación que prueba. Para mantene
 ```text
 node scripts/build.mjs --sandbox
 node scripts/build.mjs --smoke-tests --sandbox
-adb install -r release/Cabinas-UJI-0.2.2-android-sandbox.apk
+adb install -r release/Cabinas-UJI-0.2.3-android-sandbox.apk
 adb install -r -t release/Cabinas-UJI-android-smoke-tests-sandbox.apk
 adb shell am instrument -w es.cabinasuji.independiente.smoke.sandbox/es.cabinasuji.independiente.smoke.SmokeRunner
 ```

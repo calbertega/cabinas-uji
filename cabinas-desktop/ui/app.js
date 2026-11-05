@@ -1,6 +1,7 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const icon=n=>'<svg class="icon" aria-hidden="true"><use href="#i-'+n+'"/></svg>';
-const parts=()=>Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).map(p=>[p.type,p.value]));
+const madridClock=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+const parts=()=>Object.fromEntries(madridClock.formatToParts(new Date()).map(p=>[p.type,p.value]));
 const dayString=()=>{const p=parts();return p.year+'-'+p.month+'-'+p.day};
 const addDays=(s,n)=>{const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
 const hh=h=>{const m=Math.round(h*60);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
@@ -10,7 +11,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const planUrls={1:'https://www.uji.es/upo/rest/contenido/644305285/raw?idioma=ca',2:'https://www.uji.es/upo/rest/contenido/644305293/raw?idioma=ca',3:'https://www.uji.es/upo/rest/contenido/644305306/raw?idioma=ca',5:'https://www.uji.es/upo/rest/contenido/1015359380/raw?idioma=ca'};
 const CALENDAR_MAX_AGE=120000;
 let personalConnector=null;
-let today=dayString(),selectedDay=today,rooms=[],data={},floor='all',selected=207,view=matchMedia('(max-width:760px)').matches?'cards':'schedule',loading=false,generation=0,updatedAt=null,failed=0,mode='campus',nowMode=false,lastLoadAt=0,calendarNeedsReload=false;
+let today=dayString(),selectedDay=today,rooms=[],data={},floor='all',selected=207,view=matchMedia('(max-width:760px)').matches?'cards':'schedule',loading=false,generation=0,updatedAt=null,failed=0,mode='campus',nowMode=false,lastLoadAt=0,lastLoadDate=null,calendarNeedsReload=false;
 const p=parts();let initialHour=Number(p.hour)+Number(p.minute)/60;
 if(initialHour>=20||[0,6].includes(new Date(today+'T12:00:00Z').getUTCDay())){do{selectedDay=addDays(selectedDay,1)}while([0,6].includes(new Date(selectedDay+'T12:00:00Z').getUTCDay()));initialHour=8}else initialHour=Math.max(8,Math.ceil(initialHour*2)/2);
 $('#date').min=today;$('#date').max=addDays(today,30);$('#date').value=selectedDay;
@@ -42,8 +43,14 @@ function roomState(r){
 function windows(r){const d=currentCalendar(r);if(!d||r.kind==='open')return [];const a=[];let start=null;for(let i=0;i<=24;i++){const h=8+i/2,available=i<24&&!d.events.some(e=>e.start<h+.5&&e.end>h);if(available&&start===null)start=h;if(!available&&start!==null){a.push({start,end:h});start=null}}return a;}
 function stateText(r){return {free:'Libre en tu franja',busy:'No disponible',unknown:!data[r.id]&&loading?'Consultando…':'Sin confirmar',closed:'Fuera de horario',open:'Acceso directo'}[roomState(r)]}
 function pill(r){const s=roomState(r);return '<span class="pill '+(['busy','closed'].includes(s)?'busy':['unknown','open'].includes(s)?'unknown':'')+'">'+stateText(r)+'</span>';}
-function timeline(r){let t='';for(let i=0;i<24;i++){const h=8+i*.5,d=currentCalendar(r);let classes='slot',reason='Libre para reservar';if(!d||r.kind==='open'){classes+=' unknown';reason=r.kind==='open'?'Ocupación no publicada':'Sin disponibilidad verificada'}else{const e=d.events.find(e=>e.start<h+.5&&e.end>h);if(e){classes+=e.type==='closed'?' closed':' busy';reason=e.type==='closed'?'Cerrada':'No disponible'}}if(h<query.start+query.duration&&h+.5>query.start)classes+=' inrange';t+='<span class="'+classes+'" title="'+hh(h)+'–'+hh(h+.5)+': '+reason+'" aria-hidden="true"></span>'}return '<div class="timeline">'+t+'</div>';}
-function filtered(){const term=$('#room-search').value.trim();return rooms.filter(r=>(floor==='all'||r.floor===Number(floor))&&(!term||String(r.id).includes(term))&&(!$('#only-free').checked||roomState(r)==='free')).sort((a,b)=>{const rank=r=>r.bookingSupported?0:r.kind==='open'?1:2;return rank(a)-rank(b)||a.id-b.id});}
+function timeline(r){let t='';const d=currentCalendar(r);for(let i=0;i<24;i++){const h=8+i*.5;let classes='slot',reason='Libre para reservar';if(!d||r.kind==='open'){classes+=' unknown';reason=r.kind==='open'?'Ocupación no publicada':'Sin disponibilidad verificada'}else{const e=d.events.find(e=>e.start<h+.5&&e.end>h);if(e){classes+=e.type==='closed'?' closed':' busy';reason=e.type==='closed'?'Cerrada':'No disponible'}}if(h<query.start+query.duration&&h+.5>query.start)classes+=' inrange';t+='<span class="'+classes+'" title="'+hh(h)+'–'+hh(h+.5)+': '+reason+'" aria-hidden="true"></span>'}return '<div class="timeline">'+t+'</div>';}
+function filtered(){
+  const term=$('#room-search').value.trim(),onlyFree=$('#only-free').checked;
+  return rooms.filter(r=>(floor==='all'||r.floor===Number(floor))&&(!term||String(r.id).includes(term)))
+    .map(room=>({room,rank:room.bookingSupported?(roomState(room)==='free'?0:1):room.kind==='open'?2:3}))
+    .filter(({rank})=>!onlyFree||rank===0)
+    .sort((a,b)=>a.rank-b.rank||a.room.id-b.room.id).map(({room})=>room);
+}
 function empty(){return '<div class="empty">'+icon('grid')+'<strong>No encontramos esa cabina.</strong><p>Prueba con otro número o cambia de planta.</p><button type="button" data-reset-filters>Quitar filtros</button></div>';}
 function render(){
   const focusedRoom=document.activeElement?.dataset?.room,focusedView=document.activeElement?.classList?.contains('room-card')?'#cards':'#rows';
@@ -71,7 +78,7 @@ function notice(){
   else if(restricted){title='No tenemos las horas libres verificadas.';note='La consulta pública devuelve un bloqueo general. Pulsa «Conectar con UJI» para consultar los horarios con tu sesión local.';link=true}
   else if(weekend){title='Has elegido un fin de semana.';note='Comprueba la apertura y las condiciones de reserva en la biblioteca.'}
   else if(failed&&failed===rooms.filter(r=>r.bookingSupported).length){title='No hemos podido comprobar los horarios.';note='Puedes consultar el calendario oficial o volver a actualizar.';link=true}
-  else if(!rooms.some(r=>currentCalendar(r))){title='Disponibilidad sin verificar.';note='Elegir una hora aquí no confirma que haya una cabina libre. Compruébalo en el horario oficial.';link=true}
+  else if(!loading&&!rooms.some(r=>currentCalendar(r))){title='Disponibilidad sin verificar.';note='Elegir una hora aquí no confirma que haya una cabina libre. Compruébalo en el horario oficial.';link=true}
   $('#notice').hidden=!title;$('#notice').innerHTML=title?icon('help')+'<div><strong>'+title+'</strong> '+note+'</div>'+(link?'<a href="https://sites.google.com/uji.es/disponibilitat-cabines/p%C3%A0gina-principal" target="_blank" rel="noopener">Consultar horario UJI ↗</a>':''):'';
 }
 function renderDetail(){
@@ -90,14 +97,28 @@ function status(){
 function quickStyle(){$('#date-display').textContent=new Intl.DateTimeFormat('es-ES',{weekday:'short',day:'numeric',month:'short',timeZone:'Europe/Madrid'}).format(new Date(query.date+'T12:00:00Z'));$('#today-btn').classList.toggle('on',query.date===today);$('#tomorrow-btn').classList.toggle('on',query.date===addDays(today,1));$('#now-btn').classList.toggle('on',nowMode)}
 async function load(){
   syncToday();calendarNeedsReload=false;lastLoadAt=Date.now();
-  const gen=++generation;loading=true;failed=0;data={};$('#only-free').checked=false;render();
+  const gen=++generation;loading=true;failed=0;
+  if(personalConnector?.enabled&&lastLoadDate===query.date){
+    data=Object.fromEntries(rooms.filter(r=>currentCalendar(r)).map(r=>[r.id,data[r.id]]));
+  }else{data={};updatedAt=null;}
+  lastLoadDate=query.date;render();
   if(personalConnector?.enabled){await personalConnector.load(query.date,gen);return;}
   const date=query.date,ids=rooms.filter(r=>r.kind==='bookable').map(r=>r.id),chunks=[];for(let i=0;i<ids.length;i+=4)chunks.push(ids.slice(i,i+4));let cursor=0;
   async function run(){while(cursor<chunks.length){const chunk=chunks[cursor++];try{const response=await fetch('/api/availability?date='+date+'&ids='+chunk.join(','),{signal:AbortSignal.timeout(25000)});if(!response.ok)throw Error('Upstream');const result=await response.json();if(gen!==generation)return;for(const r of result.rooms){data[r.id]=r;if(r.error)failed++}updatedAt=result.updatedAt}catch{if(gen!==generation)return;chunk.forEach(id=>{data[id]={error:true};failed++})}render()}}
   await Promise.all([run(),run()]);if(gen!==generation)return;loading=false;render();
 }
-function apply(){syncToday();nowMode=false;const date=$('#date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date<today||date>addDays(today,30))return;const changed=date!==query.date||calendarNeedsReload;query={date,start:Number($('#start').value),duration:Number($('#duration').value)};remember();render();if(changed)load()}
+function apply(refresh=false){
+  syncToday();nowMode=false;const date=$('#date').value;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date<today||date>addDays(today,30))return;
+  const changed=date!==query.date||calendarNeedsReload;
+  query={date,start:Number($('#start').value),duration:Number($('#duration').value)};
+  const usingUji=personalConnector?.enabled;
+  if(refresh===true&&personalConnector?.native)personalConnector.enabled=true;
+  remember();
+  if(changed||(refresh===true&&personalConnector?.enabled&&(!loading||!usingUji)))load();else render();
+}
 function checkFreshness({resume=false}={}){
+  if($('#booking-dialog')?.open)return;
   const changed=syncToday();if(!rooms.length)return;
   const age=Date.now()-lastLoadAt,hadPublicData=Object.values(data).some(d=>d&&!d.error);
   if(changed||calendarNeedsReload||(!loading&&age>=CALENDAR_MAX_AGE&&(resume||hadPublicData))){load();return;}
@@ -111,8 +132,8 @@ roomDialog.addEventListener('close',()=>{document.documentElement.classList.remo
 $('#room-close').onclick=closeRoom;
 roomDialog.addEventListener('click',e=>{if(e.target===roomDialog){const b=roomDialog.getBoundingClientRect();if(e.clientY<b.top||e.clientY>b.bottom||e.clientX<b.left||e.clientX>b.right)closeRoom();}});
 matchMedia('(max-width:760px)').addEventListener('change',e=>{if(!e.matches)closeRoom();setView(e.matches?'cards':'schedule')});
-$('#filters').addEventListener('submit',e=>{e.preventDefault();apply();$('#availability-panel').scrollIntoView({behavior:'smooth',block:'start'})});
-['date','start','duration'].forEach(id=>$('#'+id).addEventListener('change',apply));$('#only-free').addEventListener('change',render);$('#room-search').addEventListener('input',render);$('#refresh').addEventListener('click',load);
+$('#filters').addEventListener('submit',e=>{e.preventDefault();apply(true);$('#availability-panel').scrollIntoView({behavior:'smooth',block:'start'})});
+['date','start','duration'].forEach(id=>$('#'+id).addEventListener('change',apply));$('#only-free').addEventListener('change',render);$('#room-search').addEventListener('input',render);$('#refresh').addEventListener('click',()=>apply(true));
 $('#today-btn').onclick=()=>{syncToday();$('#date').value=today;$('#start').value='8';apply()};
 $('#tomorrow-btn').onclick=()=>{syncToday();$('#date').value=addDays(today,1);$('#start').value='8';apply()};
 $('#now-btn').onclick=()=>{syncToday();const p=parts();$('#date').value=today;$('#start').value=String(Math.max(8,Math.min(19.5,Math.ceil((Number(p.hour)+Number(p.minute)/60)*2)/2)));apply();nowMode=true;quickStyle()};
@@ -127,7 +148,7 @@ setView(view);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkFreshness({resume:true})});
 window.addEventListener('focus',()=>checkFreshness({resume:true}));
 window.addEventListener('pageshow',()=>checkFreshness({resume:true}));
-setInterval(()=>{if(document.visibilityState==='visible')checkFreshness()},60000);
+setInterval(()=>{if(document.visibilityState==='visible')checkFreshness()},30000);
 async function init(){try{const r=await fetch('/api/rooms');if(!r.ok)throw Error();rooms=await r.json();if(!rooms.some(r=>r.id===selected))selected=207;render();await load()}catch{loading=false;$('#free-count').textContent='Sin conexión';$('#free-desc').textContent='No se pudo cargar el listado';$('#rows').innerHTML='<div class="empty"><strong>No se han podido cargar las cabinas.</strong><p>Vuelve a intentarlo en unos instantes.</p></div>';$('#cards').innerHTML=$('#rows').innerHTML;$('#connection-dot').className='dot error';$('#connection-text').textContent='No se ha podido conectar. Pulsa actualizar para reintentar.';$('#refresh').disabled=false;$('#refresh').onclick=()=>location.reload()}}
 init();
 
@@ -136,9 +157,24 @@ init();
 // results to the server. The extension supplies normalized numeric intervals.
 (()=>{
   const origin=location.origin;
-  let installed=false,pending=null,finishLoad=null,timer=null;
+  const native=Boolean(window.cabinasDesktop),sessionKey='cabinas-uji.auto-check';
+  let installed=false,pending=null,finishLoad=null,timer=null,remembered=false;
+  try{remembered=native&&localStorage.getItem(sessionKey)==='1';}catch{}
   const message=text=>{$('#connector-message').textContent=text};
   const send=(type,extra={})=>window.postMessage({channel:'cabinas-uji-web',type,...extra},origin);
+  function updateSessionView(){
+    if(!native)return;
+    $('.connector-panel').classList.toggle('session-connected',remembered);
+    $('#connector-connect').hidden=remembered;
+    $('#account-label').textContent=remembered?'Mi cuenta':'Cuenta UJI';
+    $('.account-optional').hidden=remembered;
+  }
+  function rememberSession(value){
+    if(!native||remembered===value)return;
+    remembered=value;
+    try{if(value)localStorage.setItem(sessionKey,'1');else localStorage.removeItem(sessionKey);}catch{}
+    updateSessionView();
+  }
   const errors={unverified:'UJI sigue devolviendo el bloqueo general. No hemos podido verificar las horas libres.',connection:'No se ha podido consultar con esta sesión. Puedes volver a conectar.',calendar_missing:'El formulario UJI no muestra un calendario consultable. No hay horarios verificados.',page_changed:'El catálogo ha cambiado y el recorrido automático no ha encontrado el formulario.',timeout:'La conexión ha caducado. Pulsa Conectar con UJI para intentarlo de nuevo.',extension_unavailable:'La conexión local no responde. Comprueba que esté activa y recarga esta página.'};
   Object.assign(errors,{catalogue_permission:'Chrome no permite al conector acceder al catálogo UJI. Comprueba su permiso para cataleg.uji.es en los detalles de la extensión.',navigation_changed:'La página UJI cambió durante la consulta. Puedes volver a conectar.',reader_failed:'El conector no ha podido leer el calendario UJI. No hay horarios verificados.'});
   function end(){clearTimeout(timer);pending=null;$('#connector-cancel').hidden=true;$('#connector-connect').disabled=false;const done=finishLoad;finishLoad=null;done?.();}
@@ -150,20 +186,21 @@ init();
     const age=Date.now()-Date.parse(item.fetchedAt);
     if(!Number.isFinite(age)||age< -60000||age>=CALENDAR_MAX_AGE||!Array.isArray(item.events)||item.events.length>1000||item.events.some(e=>!Number.isFinite(e.start)||!Number.isFinite(e.end)||e.start<0||e.end>24||e.end<e.start||!['closed','unavailable'].includes(e.type))){bad();return;}
     data[item.id]={id:item.id,fetchedAt:item.fetchedAt,events:item.events.map(e=>({start:e.start,end:e.end,type:e.type}))};updatedAt=item.fetchedAt;
+    rememberSession(true);
   }
-  personalConnector={enabled:false,resetLocal:cancel,load(date,gen){
+  personalConnector={enabled:remembered,native,resetLocal(){rememberSession(false);cancel()},load(date,gen){
     if(pending)send('cancel',{requestId:pending.id});end();
     return new Promise(resolve=>{
       const id=crypto.randomUUID();pending={id,date,gen};finishLoad=resolve;
       $('#connector-connect').disabled=true;$('#connector-cancel').hidden=false;message('Abriendo la consulta UJI automáticamente…');
       send('connect',{requestId:id,date});
-      timer=setTimeout(()=>{if(!pending||pending.id!==id)return;send('cancel',{requestId:id});personalConnector.enabled=false;loading=false;render();end();message(errors.timeout)},905000);
+      timer=setTimeout(()=>{if(!pending||pending.id!==id)return;send('cancel',{requestId:id});personalConnector.enabled=remembered;loading=false;render();end();message(errors.timeout)},905000);
     });
   }};
   window.addEventListener('message',event=>{
     if(event.source!==window||event.origin!==origin||event.data?.channel!=='cabinas-uji-extension')return;
     const m=event.data;
-    if(m.type==='ready'&&m.version>=2){installed=true;if(!pending)message('Lista para conectar. Pulsa Conectar con UJI; solo tendrás que identificarte si UJI lo pide.');return;}
+    if(m.type==='ready'&&m.version>=2){installed=true;if(!pending)message(remembered?'Consultas UJI activadas.':'Lista para conectar. Pulsa Conectar con UJI; solo tendrás que identificarte si UJI lo pide.');return;}
     if(!pending||m.requestId!==pending.id||m.date!==pending.date||pending.gen!==generation)return;
     if(m.type==='opening')message('Abriendo el catálogo UJI…');
     if(m.type==='login')message('UJI necesita identificarte. Completa el acceso en su ventana; la consulta continuará al volver al catálogo.');
@@ -171,7 +208,7 @@ init();
     if(m.type==='progress'){acceptRoom(m.room);render();message('Consultando cabinas · '+Math.min(39,Math.max(0,Number(m.done)||0))+' de 39');}
     if(['done','error','cancelled'].includes(m.type)){
       const known=rooms.filter(r=>currentCalendar(r)).length;
-      loading=false;if(m.type!=='done')personalConnector.enabled=false;render();end();
+      loading=false;if(m.type!=='done')personalConnector.enabled=m.type==='error'&&remembered;render();end();
       message((m.type==='done'?(known?known+' cabinas verificadas para este día. Se actualizarán desde tu sesión mientras la conexión esté activa.':'La consulta ha terminado sin horarios verificables.'):m.type==='cancelled'?'Conexión cancelada.':errors[m.code]||'No se ha completado la conexión. Las cabinas pendientes siguen sin confirmar.')+(m.type==='error'&&m.tabKept?' La ventana UJI permanece abierta para comprobar el problema.':''));
     }
   });
@@ -181,6 +218,7 @@ init();
   });
   $('#connector-cancel').addEventListener('click',cancel);
   window.addEventListener('pagehide',()=>{if(pending)send('cancel',{requestId:pending.id})});
+  updateSessionView();
   send('ping');
 })();
 

@@ -7,11 +7,11 @@ Aplicación independiente para consultar de forma visual los horarios de las cab
 Los usuarios finales solo necesitan un archivo de Releases:
 
 - **Windows x64:** descarga el [ZIP de Windows 0.2.1](https://github.com/calbertega/cabinas-uji/releases/download/v0.2.1/Cabinas-UJI-0.2.1-windows-x64.zip), extráelo completo y abre **Cabinas UJI.exe**.
-- **Android 8 o posterior:** descarga e instala la [APK Android 0.2.2](https://github.com/calbertega/cabinas-uji/releases/download/v0.2.2/Cabinas-UJI-0.2.2-android.apk). Requiere Android System WebView actualizado.
+- **Android 8 o posterior:** descarga e instala la [APK Android 0.2.3](https://github.com/calbertega/cabinas-uji/releases/download/v0.2.3/Cabinas-UJI-0.2.3-android.apk). Requiere Android System WebView actualizado.
 
 Las sumas SHA-256 están en la release de cada descarga. La APK está firmada con la clave del proyecto. El ejecutable Windows carece de firma Authenticode.
 
-Pulsa **Conectar con UJI** e identifícate en la pantalla oficial que abre la aplicación. Elige fecha, hora y cabina. No necesitas extensión, Node, servidor propio ni copiar enlaces.
+En Android, elige una franja y pulsa **Buscar cabinas**. La aplicación consulta con tu sesión local y abre el acceso oficial si UJI vuelve a pedirte que te identifiques. En el portable de Windows 0.2.1, pulsa primero **Conectar con UJI**. Puedes usar las descargas directamente, sin instalar extensiones ni herramientas de desarrollo.
 
 Para reservar, pulsa **Continuar reserva en UJI** y accede al formulario de la cabina. Debes elegir también las horas y confirmar personalmente allí. La aplicación no envía reservas automáticamente; una franja consultada no equivale a una reserva confirmada.
 

@@ -26,7 +26,7 @@ public final class MainActivity extends Activity {
   private WebMessagePort bridge;private JSONArray rooms,known;private String navigateSource,readerSource;
   private int epoch=0;private Job job;private boolean resetting=false,signInAttempted=false,destroyed=false;
   private interface Result{void accept(JSONObject value);}
-  private static final class Job{final int epoch;final String id,day;final long deadline;int verified=0,transportFailures=0;Job(int n,String i,String d){epoch=n;id=i;day=d;deadline=SystemClock.elapsedRealtime()+900000;}}
+  private static final class Job{final int epoch;final String id,day;final long deadline;int verified=0,transportFailures=0;boolean reading;Job(int n,String i,String d){epoch=n;id=i;day=d;deadline=SystemClock.elapsedRealtime()+900000;}}
   @Override public void onCreate(Bundle state){
     super.onCreate(state);
     getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
@@ -138,16 +138,22 @@ public final class MainActivity extends Activity {
     if(view==official){officialPanel.removeView(view);view.destroy();official=null;showOfficial(false);}
     else{if(bridge!=null){bridge.close();bridge=null;}root.removeView(view);view.destroy();ui=null;errorScreen("El navegador de Android se ha cerrado. Pulsa Volver a abrir para recuperar la aplicación.");}
   }
-  private void fail(Job j,String code){if(!active(j))return;JSONObject m=message(j,"error");try{m.put("code",code).put("tabKept",true);}catch(Exception ignored){}send(m);job=null;showOfficial(true);}
+  private void fail(Job j,String code){if(!active(j))return;JSONObject m=message(j,"error");try{m.put("code",code).put("tabKept",!j.reading);}catch(Exception ignored){}send(m);job=null;if(!j.reading)showOfficial(true);}
+  private void beginReading(Job j){
+    j.reading=true;
+    showOfficial(false);
+    send(message(j,"reading"));
+    collect(j,0,0);
+  }
   private void advance(Job j){
     if(!active(j))return;if(SystemClock.elapsedRealtime()>j.deadline){fail(j,"timeout");return;}if(official==null){fail(j,"connection");return;}
     String value=official.getUrl();if(value==null){handler.postDelayed(()->advance(j),500);return;}Uri u=Uri.parse(value);
     if(!"cataleg.uji.es".equals(u.getHost())){showOfficial(true);send(message(j,"login"));handler.postDelayed(()->advance(j),1500);return;}
-    String p=u.getPath();if("/view/calendar/Calendar.html".equals(p)||"/view/uresolver/34CVA_UJI/bookingAvailability".equals(p)){send(message(j,"reading"));collect(j,0,0);return;}
+    String p=u.getPath();if("/view/calendar/Calendar.html".equals(p)||"/view/uresolver/34CVA_UJI/bookingAvailability".equals(p)){beginReading(j);return;}
     if(p==null||!p.startsWith("/discovery/")){handler.postDelayed(()->advance(j),1000);return;}
     evaluate(j,navigateSource,"advanceUjiCalendar("+(!signInAttempted)+")",16000,result->{
       if(!active(j))return;String stage=result.optString("stage");
-      if("ready".equals(stage)){send(message(j,"reading"));collect(j,0,0);}else if("calendar_missing".equals(stage)){fail(j,"calendar_missing");}
+      if("ready".equals(stage)){beginReading(j);}else if("calendar_missing".equals(stage)){fail(j,"calendar_missing");}
       else{if("navigating".equals(stage))signInAttempted=true;if("navigating".equals(stage)||"login".equals(stage)){showOfficial(true);send(message(j,"login"));}handler.postDelayed(()->advance(j),1000);}
     });
   }
