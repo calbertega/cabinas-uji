@@ -1,0 +1,18 @@
+CABINAS UJI - Aplicación independiente
+
+1. Extrae este ZIP completo en una carpeta.
+2. Abre "Cabinas UJI.exe". No necesitas instalar Node, Chrome ni una extensión.
+3. Pulsa "Conectar con UJI" e identifícate en la ventana oficial.
+4. Elige día, hora, duración y cabina en el horario visual.
+5. Para reservar, pulsa "Entrar y reservar en UJI" y confirma en el formulario oficial.
+
+La aplicación nunca envía reservas automáticamente. Una franja seleccionada no
+equivale a una reserva. Los errores o bloqueos se muestran sin confirmar.
+
+Tu sesión se mantiene en este ordenador, separada del Chrome habitual. Para
+cerrarla y cambiar de cuenta, pulsa "Cerrar sesión local" en la aplicación.
+La aplicación no pide ni exporta contraseñas, cookies o identificadores de lector.
+
+Acceso real validado el 30/10/2026 con 38 de 39 cabinas consultables.
+La cabina 320 quedó sin confirmar. La prueba no garantiza acceso para todos los
+perfiles UJI. El detalle conserva bloqueos exactos; la cuadrícula usa 30 minutos.

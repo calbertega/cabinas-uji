@@ -1,0 +1,13 @@
+<dialog id="booking-dialog" aria-labelledby="booking-title" aria-describedby="booking-description">
+  <div class="booking-heading"><span class="booking-badge">CUENTA UJI · OPCIONAL</span><button type="button" class="icon-button" id="booking-close" aria-label="Cerrar panel de reservas" autofocus>×</button></div>
+  <h2 id="booking-title">Tu sitio, a un paso.</h2>
+  <p id="booking-description">La UJI gestiona tu cuenta y confirma la reserva. Revisa allí la disponibilidad antes de enviarla.</p>
+  <div class="booking-tabs" aria-label="Sección del catálogo oficial"><button type="button" id="booking-tab-room" class="active" aria-pressed="true">Reservar cabina</button><button type="button" id="booking-tab-account" aria-pressed="false">Mi cuenta UJI</button></div>
+  <div class="booking-context" id="booking-context"></div>
+  <ol class="booking-steps"><li><span>1</span><div><strong>Identifícate en la UJI</strong><p>Accede con tu cuenta en la ventana oficial.</p></div></li><li><span>2</span><div><strong>Elige las horas y confirma</strong><p>En la ficha de la cabina, abre «Petición» y completa la reserva.</p></div></li></ol>
+  <p class="booking-notice" id="booking-popup-note" role="status">Tu selección sigue aquí. Completa el acceso y la confirmación en la ventana oficial de la UJI.</p>
+  <a class="booking-primary" id="booking-signin" target="_blank" rel="noopener" href="https://cataleg.uji.es/discovery/account?vid=34CVA_UJI%3AVU1&amp;lang=es"><span id="booking-signin-label">Entrar y reservar en UJI</span><svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+  <p class="booking-trust">Tu cuenta y tu reserva las gestiona la universidad.</p>
+  <details id="booking-preview-details"><summary>Ver la ficha oficial aquí <span aria-hidden="true">+</span></summary><div class="booking-preview-toolbar"><a id="booking-external" href="https://cataleg.uji.es" target="_blank" rel="noopener">Abrir en UJI ↗</a><button type="button" id="booking-reload">Recargar ficha</button></div><div class="booking-frame-shell"><div id="booking-loader" class="booking-loader" role="status"><strong>Cargando ficha oficial…</strong><span>La identificación se completa en la ventana UJI.</span></div><iframe id="booking-frame" title="Ficha en el catálogo oficial UJI" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"></iframe></div><p class="booking-preview-note">La UJI requiere su propia ventana para identificarte y confirmar la reserva.</p></details>
+  <button type="button" class="optional-exit" id="booking-browse">Seguir consultando</button>
+</dialog>

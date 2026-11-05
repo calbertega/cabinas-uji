@@ -1,0 +1,17 @@
+{
+  "name": "cabinas-uji-desktop",
+  "productName": "Cabinas UJI",
+  "version": "0.2.1",
+  "private": true,
+  "description": "Consulta visual de cabinas UJI con sesión local individual",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "prepare-ui": "node scripts/prepare-ui.mjs",
+    "start": "electron .",
+    "check": "node scripts/check.mjs && node scripts/check-connection.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "electron": "45.2.3"
+  }
+}

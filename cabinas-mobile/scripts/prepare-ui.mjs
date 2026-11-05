@@ -1,0 +1,13 @@
+import {mkdir,readFile,writeFile,copyFile} from 'node:fs/promises';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+const prepared=spawnSync(process.execPath,[fileURLToPath(new URL('../../cabinas-desktop/scripts/prepare-ui.mjs',import.meta.url))],{encoding:'utf8',windowsHide:true});if(prepared.status!==0)throw Error(prepared.stderr||'Failed to prepare shared UI');
+const desktop=new URL('../../cabinas-desktop/',import.meta.url),out=new URL('../app/src/main/assets/',import.meta.url);await mkdir(out,{recursive:true});
+let html=await readFile(new URL('ui/index.html',desktop),'utf8'),js=await readFile(new URL('ui/app.js',desktop),'utf8');
+html=html.replaceAll('este ordenador','este móvil').replaceAll('en el ordenador','en el móvil');
+const native=`(()=>{let port=null,queue=[],listeners=[];window.cabinasDesktop={send:m=>{if(port)port.postMessage(JSON.stringify(m));else if(queue.length<20)queue.push(m);},onMessage:f=>{if(typeof f==='function')listeners.push(f);}};Object.defineProperty(window,'__cabinasInit',{value:nonce=>{const accept=e=>{if(e.data!==nonce||e.ports?.length!==1)return;window.removeEventListener('message',accept);port=e.ports[0];port.onmessage=e=>{try{const m=JSON.parse(e.data);listeners.forEach(f=>f(m));}catch{}};for(const m of queue)port.postMessage(JSON.stringify(m));queue=[];};window.addEventListener('message',accept);},writable:false,configurable:false});})();\n`;
+await writeFile(new URL('index.html',out),html);await writeFile(new URL('app.js',out),native+js);
+for(const f of ['rooms.json'])await copyFile(new URL('ui/'+f,desktop),new URL(f,out));
+for(const f of ['reader.js','navigate.js'])await copyFile(new URL('desktop/'+f,desktop),new URL(f,out));
+await copyFile(new URL('../../LICENSE',import.meta.url),new URL('LICENSE-Cabinas-UJI.txt',out));
+console.log('Prepared mobile assets and a main-frame-only message port bridge.');
