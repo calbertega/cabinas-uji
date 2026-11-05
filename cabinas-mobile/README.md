@@ -10,7 +10,7 @@ Si Android rechaza la instalación, conserva el aviso y su motivo para poder rev
 
 ## Validación
 
-La 0.2.1 refuerza el control del origen de la ventana oficial, incluidos los POST directos de navegación. La 0.2.0 se probó con una sesión UJI en un emulador Android 15. Se consultaron horarios y se abrió el formulario oficial de reserva. Consulta `VALIDACION.md` para el alcance de cada versión.
+La 0.2.2 permite reintentar el acceso a Cuenta UJI tras un corte de conexión. La 0.2.1 se probó con una sesión UJI en un emulador Android 15 para consultar horarios y abrir el formulario oficial de reserva. Consulta `VALIDACION.md` para el alcance de cada versión.
 
 ## Sesión y datos
 
@@ -36,7 +36,7 @@ El primer comando prepara los recursos, compila Java y DEX, empaqueta, alinea, f
 Con Android SDK Platform Tools y un emulador API 35 disponibles:
 
 ```text
-adb install -r release/Cabinas-UJI-0.2.1-android.apk
+adb install -r release/Cabinas-UJI-0.2.2-android.apk
 adb install -r -t release/Cabinas-UJI-android-smoke-tests.apk
 adb shell am instrument -w es.cabinasuji.independiente.smoke/.SmokeRunner
 ```
@@ -46,7 +46,7 @@ La instrumentación borra la sesión de la instalación que prueba. Para mantene
 ```text
 node scripts/build.mjs --sandbox
 node scripts/build.mjs --smoke-tests --sandbox
-adb install -r release/Cabinas-UJI-0.2.1-android-sandbox.apk
+adb install -r release/Cabinas-UJI-0.2.2-android-sandbox.apk
 adb install -r -t release/Cabinas-UJI-android-smoke-tests-sandbox.apk
 adb shell am instrument -w es.cabinasuji.independiente.smoke.sandbox/es.cabinasuji.independiente.smoke.SmokeRunner
 ```

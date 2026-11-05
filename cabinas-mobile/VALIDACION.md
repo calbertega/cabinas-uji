@@ -1,5 +1,9 @@
 # Validación Android
 
+## Versión 0.2.2
+
+En el emulador Android 15 se instaló la APK sobre la 0.2.1 con el mismo certificado de firma. Se cortó la red al abrir «Cuenta UJI», se comprobó que la aplicación mostraba «Reintentar» y, tras restaurar la conexión, el botón volvió a cargar el catálogo oficial. La prueba cubre la recuperación ante un corte de conexión en el emulador. La conexión 4G de un móvil físico queda fuera de esta prueba.
+
 ## Primera release 0.2.1
 
 La APK firmada arranca en Android 15. La instrumentación en el paquete aislado superó 23 comprobaciones, con el mismo código y recursos que la APK de distribución. Una petición POST directa en el marco principal hacia un origen ajeno recibió 403 del cliente WebView antes de usar la red. El contexto oficial se pudo volver a cargar. La prueba usó un cuerpo sintético y un dominio reservado `.invalid`. La política de orígenes protege la navegación principal. WebView intercepta la solicitud inicial y expone los cambios de destino a través de sus callbacks de navegación. La prueba de POST no cubre todos los redireccionamientos posteriores ni los recursos de terceros integrados en páginas oficiales.

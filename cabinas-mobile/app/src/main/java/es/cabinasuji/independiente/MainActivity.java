@@ -20,6 +20,9 @@ public final class MainActivity extends Activity {
   private static final String RECORD="https://cataleg.uji.es/discovery/fulldisplay?docid=alma991004555715806336&context=L&vid=34CVA_UJI%3AVU1&lang=es";
   private final Handler handler=new Handler(Looper.getMainLooper());
   private WebView ui,official;private LinearLayout root,officialPanel;private TextView address;
+  private LinearLayout officialError;
+  private Button officialRetry;
+  private String officialEntry;
   private WebMessagePort bridge;private JSONArray rooms,known;private String navigateSource,readerSource;
   private int epoch=0;private Job job;private boolean resetting=false,signInAttempted=false,destroyed=false;
   private interface Result{void accept(JSONObject value);}
@@ -34,6 +37,20 @@ public final class MainActivity extends Activity {
     ui=webView();ui.setWebViewClient(new LocalClient());ui.setWebChromeClient(popupClient());root.addView(ui,new LinearLayout.LayoutParams(-1,0,1));
     officialPanel=new LinearLayout(this);officialPanel.setOrientation(LinearLayout.VERTICAL);officialPanel.setVisibility(View.GONE);
     LinearLayout bar=new LinearLayout(this);Button back=new Button(this);back.setText("Volver a cabinas");back.setOnClickListener(v->leaveOfficial());bar.addView(back);address=new TextView(this);address.setTextSize(13);bar.addView(address,new LinearLayout.LayoutParams(0,-2,1));officialPanel.addView(bar);root.addView(officialPanel,new LinearLayout.LayoutParams(-1,0,1));
+    officialError=new LinearLayout(this);
+    officialError.setOrientation(LinearLayout.VERTICAL);
+    int padding=Math.round(24*getResources().getDisplayMetrics().density);
+    officialError.setPadding(padding,padding,padding,padding);
+    TextView explanation=new TextView(this);
+    explanation.setText("No se ha podido conectar con el catálogo de la UJI. Comprueba la conexión o cambia de red y vuelve a intentarlo.");
+    explanation.setTextSize(16);
+    officialError.addView(explanation);
+    officialRetry=new Button(this);
+    officialRetry.setText("Reintentar");
+    officialRetry.setOnClickListener(v->{if(officialEntry!=null)openLink(officialEntry);});
+    officialError.addView(officialRetry);
+    officialError.setVisibility(View.GONE);
+    officialPanel.addView(officialError,new LinearLayout.LayoutParams(-1,0,1));
     ui.loadUrl(ORIGIN+"/");
   }
   private void errorScreen(String message){LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setPadding(24,48,24,24);TextView view=new TextView(this);view.setText(message);panel.addView(view);Button retry=new Button(this);retry.setText("Volver a abrir");retry.setOnClickListener(v->recreate());panel.addView(retry);setContentView(panel);}
@@ -48,7 +65,15 @@ public final class MainActivity extends Activity {
     return OFFICIAL_HOSTS.contains(authority);
   }
   private boolean catalogue(String value){try{Uri u=Uri.parse(value);if(!allowed(u)||!"cataleg.uji.es".equals(u.getHost())||!"34CVA_UJI:VU1".equals(u.getQueryParameter("vid")))return false;if("/discovery/account".equals(u.getPath()))return true;if(!"/discovery/fulldisplay".equals(u.getPath()))return false;for(int i=0;i<known.length();i++)if(("alma"+known.getJSONObject(i).getString("mms")).equals(u.getQueryParameter("docid")))return true;}catch(Exception ignored){}return false;}
-  private void openLink(String url){if(catalogue(url)){cancel();ensureOfficial();official.loadUrl(url);showOfficial(true);return;}try{Uri u=Uri.parse(url);if("https".equals(u.getScheme())&&u.getUserInfo()==null&&Arrays.asList("www.uji.es","sites.google.com","www.google.com","maps.google.com").contains(u.getHost()))startActivity(new Intent(Intent.ACTION_VIEW,u));}catch(Exception ignored){}}
+  private void openLink(String url){if(catalogue(url)){cancel();loadOfficial(url,url);showOfficial(true);return;}try{Uri u=Uri.parse(url);if("https".equals(u.getScheme())&&u.getUserInfo()==null&&Arrays.asList("www.uji.es","sites.google.com","www.google.com","maps.google.com").contains(u.getHost()))startActivity(new Intent(Intent.ACTION_VIEW,u));}catch(Exception ignored){}}
+  private void loadOfficial(String url,String entry){
+    ensureOfficial();
+    // Retry from the catalogue entry with GET, never from a redirected form or POST.
+    officialEntry=entry;
+    officialError.setVisibility(View.GONE);
+    official.setVisibility(View.VISIBLE);
+    official.loadUrl(url);
+  }
   private void popupLink(WebView source,String url){if(source==official&&allowed(Uri.parse(url))){official.loadUrl(url);showOfficial(true);}else openLink(url);}
   private WebChromeClient popupClient(){return new WebChromeClient(){@Override public boolean onCreateWindow(WebView view,boolean dialog,boolean gesture,Message result){if(!gesture&&view!=official)return false;final WebView popup=new WebView(MainActivity.this);popup.setWebViewClient(new WebViewClient(){private boolean handled=false;private void route(String url){if(handled||"about:blank".equals(url))return;handled=true;popup.stopLoading();popupLink(view,url);handler.post(popup::destroy);}@Override public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){route(r.getUrl().toString());return true;}@Override public void onPageStarted(WebView v,String url,android.graphics.Bitmap icon){route(url);}});((WebView.WebViewTransport)result.obj).setWebView(popup);result.sendToTarget();return true;}@Override public void onPermissionRequest(PermissionRequest r){r.deny();}};}
   private WebResourceResponse blockedNavigation(){
@@ -82,7 +107,7 @@ public final class MainActivity extends Activity {
     String id=m.optString("requestId"),day=m.optString("date");if(!id.matches("[-a-zA-Z0-9]{8,80}"))return;
     if("cancel".equals(type)){if(job!=null&&job.id.equals(id))cancel();return;}if(!"connect".equals(type))return;
     LocalDate chosen;try{chosen=LocalDate.parse(day);}catch(Exception e){return;}LocalDate today=LocalDate.now(ZoneId.of("Europe/Madrid"));if(chosen.isBefore(today)||chosen.isAfter(today.plusDays(30)))return;
-    cancel();ensureOfficial();Job j=new Job(++epoch,id,day);job=j;signInAttempted=false;send(message(j,"opening"));official.loadUrl(RECORD);handler.postDelayed(()->advance(j),1000);
+    cancel();Job j=new Job(++epoch,id,day);job=j;signInAttempted=false;send(message(j,"opening"));loadOfficial(RECORD,null);handler.postDelayed(()->advance(j),1000);
   }
   private void ensureOfficial(){if(official!=null)return;official=webView();official.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);officialPanel.addView(official,new LinearLayout.LayoutParams(-1,0,1));official.setWebChromeClient(popupClient());official.setWebViewClient(new WebViewClient(){
     @Override public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){return r.isForMainFrame()&&!allowed(r.getUrl());}
@@ -93,7 +118,17 @@ public final class MainActivity extends Activity {
     }
     @Override public void onPageStarted(WebView v,String url,android.graphics.Bitmap icon){Uri destination=Uri.parse(url);if(!allowed(destination)){address.setText("Destino bloqueado");v.stopLoading();return;}address.setText(destination.getHost());}
     @Override public void onReceivedSslError(WebView v,SslErrorHandler h,android.net.http.SslError e){h.cancel();if(job!=null)fail(job,"connection");}
-    @Override public void onReceivedError(WebView v,WebResourceRequest r,WebResourceError e){if(r.isForMainFrame()&&job!=null)fail(job,"connection");}
+    @Override public void onReceivedError(WebView v,WebResourceRequest r,WebResourceError e){
+      if(v!=official||!r.isForMainFrame())return;
+      if(job!=null)fail(job,"connection");
+      if(!allowed(r.getUrl())||officialPanel.getVisibility()!=View.VISIBLE)return;
+      int code=e.getErrorCode();
+      if(code==ERROR_CONNECT||code==ERROR_IO||code==ERROR_HOST_LOOKUP||code==ERROR_TIMEOUT){
+        v.setVisibility(View.GONE);
+        officialRetry.setVisibility(officialEntry==null?View.GONE:View.VISIBLE);
+        officialError.setVisibility(View.VISIBLE);
+      }
+    }
     @Override public boolean onRenderProcessGone(WebView v,RenderProcessGoneDetail detail){rendererGone(v);return true;}
   });}
   private void showOfficial(boolean show){if(ui==null)return;ui.setVisibility(show?View.GONE:View.VISIBLE);officialPanel.setVisibility(show?View.VISIBLE:View.GONE);}
@@ -147,6 +182,8 @@ public final class MainActivity extends Activity {
   }
   private void reset(){
     if(resetting)return;cancel();resetting=true;send(resetMessage("started"));
+    officialEntry=null;
+    officialError.setVisibility(View.GONE);
     if(official!=null){official.stopLoading();officialPanel.removeView(official);official.destroy();official=null;}WebStorage.getInstance().deleteAllData();WebViewDatabase.getInstance(this).clearHttpAuthUsernamePassword();ui.clearCache(true);
     CookieManager.getInstance().removeAllCookies(unused->{CookieManager.getInstance().flush();resetting=false;send(resetMessage("complete"));showOfficial(false);ui.loadUrl(ORIGIN+"/");});
   }

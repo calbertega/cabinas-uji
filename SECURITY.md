@@ -6,4 +6,4 @@ La sesión UJI se mantiene en el dispositivo y la consulta de horarios usa el ca
 
 ## Verificar las descargas
 
-Compara el SHA-256 de cada archivo con `Cabinas-UJI-0.2.1-SHA256SUMS.txt` de la misma release. En PowerShell puedes usar `Get-FileHash <archivo> -Algorithm SHA256`. La APK usa la firma del proyecto. El ZIP de Windows incluye un ejecutable sin firma Authenticode.
+Compara el SHA-256 de cada archivo con la suma publicada en su release. En PowerShell puedes usar `Get-FileHash <archivo> -Algorithm SHA256`. La APK usa la firma del proyecto. El ZIP de Windows incluye un ejecutable sin firma Authenticode.
